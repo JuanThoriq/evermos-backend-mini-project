@@ -1,0 +1,14 @@
+.env
+uploads/*
+!uploads/.gitkeep
+*.log
+*.pid
+*.exe
+.idea/
+.vscode/
+
+# Local learning material, not part of the submitted application
+PROJECT_NOTES.md
+LEARNING_REPORT.md
+REFERENCE_README.md
+Rakamin_Final_Project.pdf
