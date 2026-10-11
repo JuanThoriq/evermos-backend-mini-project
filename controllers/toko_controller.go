@@ -5,6 +5,7 @@ import (
 	"evermos-mini/models"
 	"fmt"
 	"math"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,9 @@ func GetAllToko(c *fiber.Ctx) error {
 	}
 	if limit < 1 {
 		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
 	}
 	offset := (page - 1) * limit
 
@@ -122,20 +126,28 @@ func UpdateToko(c *fiber.Ctx) error {
 
 	file, err := c.FormFile("photo")
 	if err == nil {
-		// Upload file baru
-		filename := fmt.Sprintf("%d-%s", time.Now().Unix(), file.Filename)
+		if file.Size > 5<<20 {
+			return c.Status(400).JSON(fiber.Map{"status": false, "message": "Ukuran foto maksimal 5MB"})
+		}
+		contentType := file.Header.Get("Content-Type")
+		if contentType != "image/jpeg" && contentType != "image/png" {
+			return c.Status(400).JSON(fiber.Map{"status": false, "message": "Foto harus JPG atau PNG"})
+		}
+		filename := fmt.Sprintf("%d-%s", time.Now().UnixNano(), filepath.Base(file.Filename))
 		savePath := fmt.Sprintf("./uploads/%s", filename)
 		if err := c.SaveFile(file, savePath); err != nil {
 			return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal menyimpan foto toko"})
 		}
-		toko.Photo = fmt.Sprintf("http://localhost:8080/uploads/%s", filename)
+		toko.Photo = fmt.Sprintf("/uploads/%s", filename)
 	}
 
 	if namaToko != "" {
 		toko.NamaToko = namaToko
 	}
 
-	config.DB.Save(&toko)
+	if err := config.DB.Save(&toko).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal memperbarui toko"})
+	}
 
 	return c.JSON(fiber.Map{
 		"status":  true,

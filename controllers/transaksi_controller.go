@@ -85,7 +85,9 @@ func CreateTrx(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": false, "message": err.Error()})
 	}
 
-	config.DB.Preload("DetailTransaksi.LogProduk").First(&transaksi, transaksi.ID)
+	if err := config.DB.Preload("DetailTransaksi.LogProduk").First(&transaksi, transaksi.ID).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Transaksi tersimpan tetapi gagal dimuat"})
+	}
 	return c.Status(201).JSON(fiber.Map{"status": true, "message": "Transaksi berhasil dibuat", "data": transaksi})
 }
 

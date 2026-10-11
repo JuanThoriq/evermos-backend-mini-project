@@ -3,9 +3,9 @@ package controllers
 import (
 	"evermos-mini/config"
 	"evermos-mini/models"
-	"evermos-mini/utils"
 	"fmt"
 	"math"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -138,12 +138,11 @@ func CreateProduct(c *fiber.Ctx) error {
 	}
 
 	if err := config.DB.Create(&produk).Error; err != nil {
+		_ = os.Remove(savePath)
 		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal menambahkan produk", "error": err.Error()})
 	}
 
-	utils.CreateLogProduk(produk)
-
-	return c.JSON(fiber.Map{"status": true, "message": "Produk berhasil ditambahkan", "data": produk})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"status": true, "message": "Produk berhasil ditambahkan", "data": produk})
 }
 
 // PUT /product/:id
@@ -201,8 +200,9 @@ func UpdateProduct(c *fiber.Ctx) error {
 		produk.CategoryID = uint(categoryID)
 	}
 
-	config.DB.Save(&produk)
-	utils.CreateLogProduk(produk)
+	if err := config.DB.Save(&produk).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal memperbarui produk"})
+	}
 
 	return c.JSON(fiber.Map{"status": true, "message": "Produk berhasil diperbarui", "data": produk})
 }

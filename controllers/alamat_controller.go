@@ -106,7 +106,9 @@ func UpdateAlamat(c *fiber.Ctx) error {
 	alamat.DetailAlamat = input.DetailAlamat
 	alamat.UpdatedAt = time.Now()
 
-	config.DB.Save(&alamat)
+	if err := config.DB.Save(&alamat).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal memperbarui alamat"})
+	}
 	return c.JSON(fiber.Map{"status": true, "message": "Alamat berhasil diperbarui", "data": alamat})
 }
 
@@ -120,6 +122,8 @@ func DeleteAlamat(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"status": false, "message": "Alamat tidak ditemukan"})
 	}
 
-	config.DB.Delete(&alamat)
+	if err := config.DB.Delete(&alamat).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal menghapus alamat"})
+	}
 	return c.JSON(fiber.Map{"status": true, "message": "Alamat berhasil dihapus"})
 }

@@ -3,6 +3,7 @@ package controllers
 import (
 	"evermos-mini/config"
 	"evermos-mini/models"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -30,8 +31,12 @@ func GetAllKategori(c *fiber.Ctx) error {
 	}
 
 	var total int64
-	query.Count(&total)
-	query.Offset(offset).Limit(limit).Find(&kategori)
+	if err := query.Count(&total).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal menghitung kategori"})
+	}
+	if err := query.Offset(offset).Limit(limit).Find(&kategori).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal mengambil kategori"})
+	}
 
 	return c.JSON(fiber.Map{
 		"status": true,
@@ -78,7 +83,9 @@ func CreateKategori(c *fiber.Ctx) error {
 	}
 
 	category := models.Category{NamaCategory: input.NamaCategory}
-	config.DB.Create(&category)
+	if err := config.DB.Create(&category).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal menambahkan kategori"})
+	}
 
 	return c.JSON(fiber.Map{"status": true, "message": "Kategori berhasil ditambahkan", "data": category})
 }
@@ -112,7 +119,9 @@ func UpdateKategori(c *fiber.Ctx) error {
 	}
 
 	category.NamaCategory = input.NamaCategory
-	config.DB.Save(&category)
+	if err := config.DB.Save(&category).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": false, "message": "Gagal memperbarui kategori"})
+	}
 
 	return c.JSON(fiber.Map{"status": true, "message": "Kategori berhasil diperbarui", "data": category})
 }
@@ -134,6 +143,8 @@ func DeleteKategori(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"status": false, "message": "Kategori tidak ditemukan"})
 	}
 
-	config.DB.Delete(&category)
+	if err := config.DB.Delete(&category).Error; err != nil {
+		return c.Status(409).JSON(fiber.Map{"status": false, "message": "Kategori masih digunakan atau gagal dihapus"})
+	}
 	return c.JSON(fiber.Map{"status": true, "message": "Kategori berhasil dihapus"})
 }
